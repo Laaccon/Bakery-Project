@@ -1,0 +1,105 @@
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <vector>
+
+using namespace std;
+
+struct item{
+  string name;
+  int flour;
+  int sugar;
+  int chocolate;
+  int pork;
+  int onion;
+  int cheese;
+};
+//Function Prototypes
+void report();
+void changeItems(vector<item>);
+void data();
+
+//Price of ingredients per gram as Global variables
+float const flourprc = 0.0005f;
+float const sugarprc = 0.001f;
+float const chocolate = 0.015f;
+float const meat = 0.01f;
+float const onion = 0.002f;
+float const cheese = 0.015f;
+
+
+int main() {
+  //if there is no file create bakeryitems vector with default values
+  vector<item> bakeryitems{
+      {"BBQ Pork Bun", 60, 10, 0, 90, 0, 0}, 
+      {"Onion Bread", 75, 5, 0, 0, 15, 0}, 
+      {"Pizza Bun", 55, 5, 0, 40, 5, 20}, 
+      {"Chocolate Bun", 65, 20, 20, 0, 0, 0}, 
+      {"Cookie", 30, 30, 20, 0, 0, 0}};
+  vector<int> bakerysales{1235, 574, 870, 407, 712};
+  vector<float>bakeryprc{3.50f, 3.00f, 3.50f, 2.50, 1.00};
+  
+  int choice;
+  //start user menu
+  cout << "Choose an option from the menu: \n";
+  cout << "1. Get a Report\n";
+  cout << "2. Enter Data\n";
+  cout << "3. Change Sale Items\n";
+  cout << "Enter -1 to quit\n";
+
+  do{
+    cin >> choice;
+
+    switch(choice){
+      case 1 : report(); break;
+      case 2 : data(); break;
+      case 3 : changeItems(bakeryitems); break;
+      case -1: break;
+      default : cout << "Bad Input. Try Again\n";
+    }
+
+  }while (choice >= 0);
+
+  cout << "Good bye.";
+}
+
+/************************************************
+* 
+*
+*************************************************/
+void changeItems(vector<item> items){
+  int pick;
+  cout << "We currently offer: \n";
+  for(int i = 0; i < sizeof(items); i++){
+    cout << items[i].name << endl;
+  }
+  do{
+    cout << "What would you like to do?\n";
+    cout << "1. Add an item\n";
+    cout << "2. Remove an item \n";
+    cout << "Enter -1 to go back\n";
+    cin >> pick;
+
+    switch (pick){
+      case 1 : ;
+      case 2 : ;
+      default : ;
+    } 
+  }while(pick >= 0);
+}
+
+/************************************************
+* 
+*
+*************************************************/
+void report(){
+
+}
+
+/************************************************
+* 
+*
+*************************************************/
+void data(){
+
+}

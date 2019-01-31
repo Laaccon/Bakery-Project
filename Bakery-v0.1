@@ -2,58 +2,83 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
-
+#include <ctime>
 using namespace std;
 
 struct item{
   string name;
+  float price;
   int flour;
   int sugar;
   int chocolate;
-  int pork;
+  int meat;
   int onion;
   int cheese;
 };
+
 //Function Prototypes
 void report();
-void changeItems(vector<item>);
-void data();
-
+void changeItems(vector<item> &);
+void salesdata();
+void addItem(vector<item> &);
+vector<float> calculateCost(vector<item> &);
 //Price of ingredients per gram as Global variables
 float const flourprc = 0.0005f;
 float const sugarprc = 0.001f;
-float const chocolate = 0.015f;
-float const meat = 0.01f;
-float const onion = 0.002f;
-float const cheese = 0.015f;
+float const chocoprc = 0.015f;
+float const meatprc = 0.01f;
+float const onionprc = 0.005f;
+float const cheeseprc = 0.015f;
 
 
 int main() {
+
+  srand(time(NULL));
+  
   //if there is no file create bakeryitems vector with default values
   vector<item> bakeryitems{
-      {"BBQ Pork Bun", 60, 10, 0, 90, 0, 0}, 
-      {"Onion Bread", 75, 5, 0, 0, 15, 0}, 
-      {"Pizza Bun", 55, 5, 0, 40, 5, 20}, 
-      {"Chocolate Bun", 65, 20, 20, 0, 0, 0}, 
-      {"Cookie", 30, 30, 20, 0, 0, 0}};
-  vector<int> bakerysales{1235, 574, 870, 407, 712};
-  vector<float>bakeryprc{3.50f, 3.00f, 3.50f, 2.50, 1.00};
-  
-  int choice;
-  //start user menu
-  cout << "Choose an option from the menu: \n";
-  cout << "1. Get a Report\n";
-  cout << "2. Enter Data\n";
-  cout << "3. Change Sale Items\n";
-  cout << "Enter -1 to quit\n";
+      {"BBQ Pork Bun", 3.5f, 60, 10, 0, 90, 0, 0}, 
+      {"Onion Bread", 2.5f, 75, 15, 0, 0, 15, 0}, 
+      {"Pizza Bun", 3.5f, 55, 5, 0, 40, 5, 20}, 
+      {"Chocolate Bun", 2.5f, 65, 20, 20, 0, 0, 0}, 
+      {"Cookie", 1.5f, 30, 25, 15, 0, 0, 0}};
 
+    ofstream output_file;
+    output_file.open("items.txt");
+      for(vector<item>::const_iterator i = bakeryitems.begin(); i != bakeryitems.end(); ++i) {
+      //output_file << i << '\n';
+  }
+  //Sales data
+  vector<int> bakerysales{1235, 574, 870, 407, 712};
+
+  float history[5][12];
+  for(int row = 0; row < 5; row++){
+    for(int col = 0; col < 12; col++){
+      history[row][col] = rand() % 2000 + 120;
+    }
+  }
+
+
+  int choice;
   do{
+    
+    //start user menu
+    cout << "Choose an option from the menu: \n";
+    cout << "1. Access Sales Data\n";
+    cout << "2. Change Sale Items\n";
+    cout << "3. View history\n";
+    cout << "Enter -1 to quit\n";
     cin >> choice;
 
     switch(choice){
-      case 1 : report(); break;
-      case 2 : data(); break;
-      case 3 : changeItems(bakeryitems); break;
+      case 1 : salesdata(); break;
+      case 2 : changeItems(bakeryitems); break;
+      case 3 : for(int row = 0; row < 5; row++){
+                for(int col = 0; col < 12; col++){
+                  cout << history[row][col] << setw(5); 
+                }
+                cout << endl;
+              } break;
       case -1: break;
       default : cout << "Bad Input. Try Again\n";
     }
@@ -64,25 +89,40 @@ int main() {
 }
 
 /************************************************
-* 
-*
+* Purpose: Menu from which the user can select
+*          adding or deleteing items from menu
+* Input: vector of items
 *************************************************/
-void changeItems(vector<item> items){
+void changeItems(vector<item> &items){
   int pick;
+  vector<float> temp;
   cout << "We currently offer: \n";
-  for(int i = 0; i < sizeof(items); i++){
-    cout << items[i].name << endl;
+  cout << "------------------- \n";
+  for(int i = 0; i < items.size(); i++){
+    cout << setw(20) << left << items[i].name;
+    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< items[i].price << endl;
+
   }
+  cout << endl;
   do{
     cout << "What would you like to do?\n";
     cout << "1. Add an item\n";
     cout << "2. Remove an item \n";
+    cout << "3. Show Item list again\n";
+    cout << "4. Show Cost of each item\n";
     cout << "Enter -1 to go back\n";
     cin >> pick;
 
     switch (pick){
-      case 1 : ;
+      case 1 : addItem(items);break;
       case 2 : ;
+      case 3 : // Display Item with price  
+                  for(int i = 0; i < items.size(); i++){
+                    cout << setw(20) << left << items[i].name;
+                    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< items[i].price << endl;
+                  }
+  cout << endl; break;
+      case 4 : temp = calculateCost(items); cout << endl; break;
       default : ;
     } 
   }while(pick >= 0);
@@ -93,13 +133,64 @@ void changeItems(vector<item> items){
 *
 *************************************************/
 void report(){
-
+  cout << setw(10) << "Item:" << setw(7)<< "Price" << setw(7) << "Profit"; 
 }
 
 /************************************************
 * 
 *
 *************************************************/
-void data(){
+void salesdata(){
 
+}
+
+/************************************************
+* Purpose: Add item to vector
+* Input: vector of items
+*************************************************/
+void addItem(vector<item> &vec){
+  string name;
+  float price;
+  int flr,sgr,choc,meat,onion,chs;
+ 
+  cout << "Enter the name of the item:\n";
+  cin >> name;
+  cout << "Enter the price of the item\n";
+  cin >> price;
+  cout << "Enter how much flour is used:\n";
+  cin >> flr;
+  cout << "Enter how much sugar is used:\n";
+  cin >> sgr;
+  cout << "Enter how much chocolate is used:\n";
+  cin >> choc;
+  cout << "Enter how much meat is used:\n";
+  cin >> meat;
+  cout << "Enter how much onion is used:\n";
+  cin >> onion;
+  cout << "Enter how much cheese is used:\n";
+  cin >> chs;
+  item newItem = {name, price, flr, sgr, choc, meat, onion, chs};
+  vec.push_back(newItem);
+
+}
+
+vector<float> calculateCost(vector<item> &vecItems){
+  vector<float> itemCost;
+  float temp;
+  //Go through the price vector and multiply by item vector with amounts, then push onto new vector
+  for(int i = 0; i < vecItems.size(); i++){
+    temp = 0.0;
+    temp += vecItems[i].flour * flourprc;
+    temp += vecItems[i].sugar * sugarprc;
+    temp += vecItems[i].chocolate * chocoprc;
+    temp += vecItems[i].meat * meatprc;
+    temp += vecItems[i].onion * onionprc;
+    temp += vecItems[i].cheese * cheeseprc;
+
+    itemCost.push_back(temp);
+  }
+  for(int i = 0; i < itemCost.size(); i++){
+    cout << vecItems[i].name << "\t\t $"<< itemCost[i] << endl;
+  }
+  return itemCost;
 }

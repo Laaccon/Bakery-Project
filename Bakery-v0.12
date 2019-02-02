@@ -2,18 +2,14 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <iterator>
 #include <ctime>
 using namespace std;
 
 struct item{
   string name;
   float price;
-  int flour;
-  int sugar;
-  int chocolate;
-  int meat;
-  int onion;
-  int cheese;
+  float cost;
 };
 
 //Function Prototypes
@@ -21,7 +17,11 @@ void report();
 void changeItems(vector<item> &);
 void salesdata();
 void addItem(vector<item> &);
-vector<float> calculateCost(vector<item> &);
+float calculateCost();
+void writeItems(vector<item> );
+void readItems();
+void displayMenu(vector<item>);
+
 //Price of ingredients per gram as Global variables
 float const flourprc = 0.0005f;
 float const sugarprc = 0.001f;
@@ -37,17 +37,13 @@ int main() {
   
   //if there is no file create bakeryitems vector with default values
   vector<item> bakeryitems{
-      {"BBQ Pork Bun", 3.5f, 60, 10, 0, 90, 0, 0}, 
-      {"Onion Bread", 2.5f, 75, 15, 0, 0, 15, 0}, 
-      {"Pizza Bun", 3.5f, 55, 5, 0, 40, 5, 20}, 
-      {"Chocolate Bun", 2.5f, 65, 20, 20, 0, 0, 0}, 
-      {"Cookie", 1.5f, 30, 25, 15, 0, 0, 0}};
+      {"BBQ Pork Bun", 3.5f, 0.94f}, 
+      {"Onion Bread", 2.5f, 0.23f}, 
+      {"Pizza Bun", 3.5f, 0.76f}, 
+      {"Chocolate Bun", 2.5f, 0.35f}, 
+      {"Cookie", 1.5f, 0.26f}};
 
-    ofstream output_file;
-    output_file.open("items.txt");
-      for(vector<item>::const_iterator i = bakeryitems.begin(); i != bakeryitems.end(); ++i) {
-      //output_file << i << '\n';
-  }
+  writeItems(bakeryitems);
   //Sales data
   vector<int> bakerysales{1235, 574, 870, 407, 712};
 
@@ -64,10 +60,11 @@ int main() {
     
     //start user menu
     cout << "Choose an option from the menu: \n";
+    cout << "-------------------------------\n";
     cout << "1. Access Sales Data\n";
     cout << "2. Change Sale Items\n";
     cout << "3. View history\n";
-    cout << "Enter -1 to quit\n";
+    cout << "\tEnter -1 to quit\n";
     cin >> choice;
 
     switch(choice){
@@ -97,19 +94,14 @@ void changeItems(vector<item> &items){
   int pick;
   vector<float> temp;
   cout << "We currently offer: \n";
-  cout << "------------------- \n";
-  for(int i = 0; i < items.size(); i++){
-    cout << setw(20) << left << items[i].name;
-    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< items[i].price << endl;
-
-  }
-  cout << endl;
+ // Display Item with price  
+  displayMenu(items);
   do{
     cout << "What would you like to do?\n";
     cout << "1. Add an item\n";
     cout << "2. Remove an item \n";
     cout << "3. Show Item list again\n";
-    cout << "4. Show Cost of each item\n";
+    //cout << "4. Show Cost of each item\n";
     cout << "Enter -1 to go back\n";
     cin >> pick;
 
@@ -117,12 +109,9 @@ void changeItems(vector<item> &items){
       case 1 : addItem(items);break;
       case 2 : ;
       case 3 : // Display Item with price  
-                  for(int i = 0; i < items.size(); i++){
-                    cout << setw(20) << left << items[i].name;
-                    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< items[i].price << endl;
-                  }
-  cout << endl; break;
-      case 4 : temp = calculateCost(items); cout << endl; break;
+                displayMenu(items);
+                  cout << endl; break;
+      //case 4 : temp = calculateCost(items); cout << endl; break;
       default : ;
     } 
   }while(pick >= 0);
@@ -151,12 +140,23 @@ void salesdata(){
 void addItem(vector<item> &vec){
   string name;
   float price;
-  int flr,sgr,choc,meat,onion,chs;
- 
+  float cost;
+   
   cout << "Enter the name of the item:\n";
   cin >> name;
   cout << "Enter the price of the item\n";
   cin >> price;
+
+  cost = calculateCost();
+  item newItem = {name, price, cost};
+  vec.push_back(newItem);
+  writeItems(vec);
+
+}
+
+float calculateCost(){
+  int flr,sgr,choc,meat,onion,chs;
+  float total = 0.0;
   cout << "Enter how much flour is used:\n";
   cin >> flr;
   cout << "Enter how much sugar is used:\n";
@@ -169,28 +169,60 @@ void addItem(vector<item> &vec){
   cin >> onion;
   cout << "Enter how much cheese is used:\n";
   cin >> chs;
-  item newItem = {name, price, flr, sgr, choc, meat, onion, chs};
-  vec.push_back(newItem);
+  
+  total += flr * flourprc;
+  total += sgr * sugarprc;
+  total += choc * chocoprc;
+  total += meat * meatprc;
+  total += onion * onionprc;
+  total += chs * cheeseprc;
 
+  return total;
 }
 
-vector<float> calculateCost(vector<item> &vecItems){
-  vector<float> itemCost;
-  float temp;
-  //Go through the price vector and multiply by item vector with amounts, then push onto new vector
-  for(int i = 0; i < vecItems.size(); i++){
-    temp = 0.0;
-    temp += vecItems[i].flour * flourprc;
-    temp += vecItems[i].sugar * sugarprc;
-    temp += vecItems[i].chocolate * chocoprc;
-    temp += vecItems[i].meat * meatprc;
-    temp += vecItems[i].onion * onionprc;
-    temp += vecItems[i].cheese * cheeseprc;
+void writeItems(vector<item> vec){
+  fstream output_file;
+  output_file.open("items.txt");
+    for(int i = 0; i < vec.size(); i++) {
+    output_file << vec[i].name << "\t"<< vec[i].price <<"\t" << vec[i].cost << "\n";
+    cout << vec[i].name<< endl;
+  }
+  output_file.close();
+}
 
-    itemCost.push_back(temp);
+void readItems(){
+  fstream input_file;
+  input_file.open("items.txt");
+  while (!input_file.eof() && input_file.is_open()) {
+		cout << endl;
+	}
+	input_file.close();
+}
+
+item parseItem(ifstream &source){
+  item fileItem;
+
+  string name;
+  float price;
+  float cost;
+
+	//Scanning a line from the file
+	source >> name >> price >> cost;
+
+	//Assigning the data to the tempCost variable
+	fileItem.name = name;
+  fileItem.price = price;
+  fileItem.cost = cost;
+
+	return fileItem;
+}
+
+
+void displayMenu(vector <item>  vec){
+  cout << setw(20) << left <<"Item Name" <<fixed << setprecision(2) << setw(20) << right << "Price" << setw(7) << "Cost" << endl;
+  cout <<"----------------------------------------------------\n";
+  for(int i = 0; i < vec.size(); i++){
+    cout << setw(20) << left << vec[i].name;
+    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< vec[i].price << setw(7) << vec[i].cost << endl;
   }
-  for(int i = 0; i < itemCost.size(); i++){
-    cout << vecItems[i].name << "\t\t $"<< itemCost[i] << endl;
-  }
-  return itemCost;
 }

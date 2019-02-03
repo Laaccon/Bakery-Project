@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
-#include <iterator>
+#include <string>
 #include <ctime>
 using namespace std;
 
@@ -15,35 +15,47 @@ struct item{
 //Function Prototypes
 void report();
 void changeItems(vector<item> &);
-void salesdata();
+void salesdata(vector<item> &);
 void addItem(vector<item> &);
+void deleteItem(vector<item> &);
 float calculateCost();
 void writeItems(vector<item> );
-void readItems();
+vector<item> readItems();
 void displayMenu(vector<item>);
+item parseItem(ifstream &);
 
 //Price of ingredients per gram as Global variables
-float const flourprc = 0.0005f;
-float const sugarprc = 0.001f;
-float const chocoprc = 0.015f;
-float const meatprc = 0.01f;
-float const onionprc = 0.005f;
-float const cheeseprc = 0.015f;
+float const FLOURPRC = 0.0005f;
+float const SUGARPRC = 0.001f;
+float const CHOCOPRC = 0.015f;
+float const MEATPRC = 0.01f;
+float const ONIONPRC = 0.005f;
+float const CHEESEPRC = 0.015f;
 
 
 int main() {
 
   srand(time(NULL));
-  
+  vector<item> bakeryitems;
+  //Check if bakery items file exists
+  fstream itemFile;
+  itemFile.open("items.txt", ios::in);
+  if (itemFile.fail()){
   //if there is no file create bakeryitems vector with default values
-  vector<item> bakeryitems{
-      {"BBQ Pork Bun", 3.5f, 0.94f}, 
-      {"Onion Bread", 2.5f, 0.23f}, 
-      {"Pizza Bun", 3.5f, 0.76f}, 
-      {"Chocolate Bun", 2.5f, 0.35f}, 
-      {"Cookie", 1.5f, 0.26f}};
+    bakeryitems = {
+        {"BBQ Pork Bun", 3.5f, 0.94f}, 
+        {"Onion Bread", 2.5f, 0.23f}, 
+        {"Pizza Bun", 3.5f, 0.76f}, 
+        {"Chocolate Bun", 2.5f, 0.35f}, 
+        {"Cookie", 1.5f, 0.26f}};
 
-  writeItems(bakeryitems);
+    writeItems(bakeryitems);
+  }
+  else{
+    itemFile.close();
+    bakeryitems = readItems();
+    cout << "File Loaded\n";
+  }
   //Sales data
   vector<int> bakerysales{1235, 574, 870, 407, 712};
 
@@ -107,10 +119,9 @@ void changeItems(vector<item> &items){
 
     switch (pick){
       case 1 : addItem(items);break;
-      case 2 : ;
-      case 3 : // Display Item with price  
-                displayMenu(items);
-                  cout << endl; break;
+      case 2 : deleteItem(items);break;
+      case 3 : displayMenu(items);break;
+                  
       //case 4 : temp = calculateCost(items); cout << endl; break;
       default : ;
     } 
@@ -122,15 +133,44 @@ void changeItems(vector<item> &items){
 *
 *************************************************/
 void report(){
-  cout << setw(10) << "Item:" << setw(7)<< "Price" << setw(7) << "Profit"; 
+  float history[5][12];
+  fstream salesFile;
+  salesFile.open("sales.txt", ios::in);
+  //if it fails create random data for testing
+  if (salesFile.fail()){
+    for(int row = 0; row < 5; row++){
+      for(int col = 0; col < 12; col++){
+        history[row][col] = rand() % 2000 + 120;
+      }
+    }
+  } else{
+
+  }
 }
 
 /************************************************
 * 
 *
 *************************************************/
-void salesdata(){
+void salesdata(vector<item> &vec){
+  int choice;
+  cout << "What would you like to do?\n";
+  cout << "1. get the annual report\n";
+  cout << "2. add this month's data\n";
 
+  switch (choice){
+    case 1 : report(); break;
+    case 2 :
+  int month;
+  int sales;
+  cout << "Confirm the month as a number(for example March would be 3: \n"
+  cin >> month;
+  for(item : vec){
+    cout << "how many " << item.name << " were sold.\n";
+    cin >> sales;
+  }
+  break;
+  }
 }
 
 /************************************************
@@ -143,7 +183,8 @@ void addItem(vector<item> &vec){
   float cost;
    
   cout << "Enter the name of the item:\n";
-  cin >> name;
+  cin.ignore();
+  getline(cin,name);
   cout << "Enter the price of the item\n";
   cin >> price;
 
@@ -151,8 +192,35 @@ void addItem(vector<item> &vec){
   item newItem = {name, price, cost};
   vec.push_back(newItem);
   writeItems(vec);
-
 }
+/************************************************
+* Purpose: Delete item to vector
+* Input: vector of items
+*************************************************/
+void deleteItem(vector<item> &vec){
+  string name;
+  bool isFound = false;
+  int index = 0;
+  cout << "Enter the name of the item you wish to delete: \n";
+  cin.ignore();
+  getline(cin, name);
+  for(int i = 0;i < vec.size(); i++){
+    if(vec[i].name == name){
+      index = i;
+      isFound = true;
+    }
+  }
+  if (isFound)
+    vec.erase(vec.begin() + index); 
+  else
+    cout << "Item Not Found\n";
+  writeItems(vec);
+}
+
+/************************************************
+* 
+*
+*************************************************/
 
 float calculateCost(){
   int flr,sgr,choc,meat,onion,chs;
@@ -170,38 +238,59 @@ float calculateCost(){
   cout << "Enter how much cheese is used:\n";
   cin >> chs;
   
-  total += flr * flourprc;
-  total += sgr * sugarprc;
-  total += choc * chocoprc;
-  total += meat * meatprc;
-  total += onion * onionprc;
-  total += chs * cheeseprc;
+  total += flr * FLOURPRC;
+  total += sgr * SUGARPRC;
+  total += choc * CHOCOPRC;
+  total += meat * MEATPRC;
+  total += onion * ONIONPRC;
+  total += chs * CHEESEPRC;
 
   return total;
 }
 
 void writeItems(vector<item> vec){
-  fstream output_file;
-  output_file.open("items.txt");
+  ofstream output_file;
+  output_file.open("items.txt",ios::out);
     for(int i = 0; i < vec.size(); i++) {
-    output_file << vec[i].name << "\t"<< vec[i].price <<"\t" << vec[i].cost << "\n";
-    cout << vec[i].name<< endl;
+    output_file << setw(20) << vec[i].name << setw(10) << vec[i].price << setw(10) << vec[i].cost << endl;
   }
   output_file.close();
 }
 
-void readItems(){
-  fstream input_file;
-  input_file.open("items.txt");
-  while (!input_file.eof() && input_file.is_open()) {
-		cout << endl;
-	}
+vector<item> readItems(){
+  vector<item> tempItems;
+  item tempItem;
+  ifstream input_file;
+  input_file.open("items.txt", ios::in);
+  cout << "Reading File\n";
+  if(input_file.fail()){
+    cout <<"Failed\n";
+    exit(1);
+  }
+  cout << "Reading\n";
+  //while(!input_file.eof()){
+    
+  //}
+
+  
+  string line;
+  while (input_file >> line){
+    cout << line;
+  }
+
+  //while (!input_file.eof() && input_file.is_open()) {
+     //tempItems.push_back(parseItem(input_file));
+   //  cout << "writing\n";
+  //  }
 	input_file.close();
+  return tempItems;
 }
 
 item parseItem(ifstream &source){
+  cout << "Parsing\n";
+  //Item that will be constructed 
   item fileItem;
-
+  //Attributes for Item
   string name;
   float price;
   float cost;
@@ -209,7 +298,7 @@ item parseItem(ifstream &source){
 	//Scanning a line from the file
 	source >> name >> price >> cost;
 
-	//Assigning the data to the tempCost variable
+	//Assign the data to attributes
 	fileItem.name = name;
   fileItem.price = price;
   fileItem.cost = cost;
@@ -217,12 +306,18 @@ item parseItem(ifstream &source){
 	return fileItem;
 }
 
-
+/**********************Display Menu**************************
+* Purpose: To output a formatted list of bakery items offered
+*
+************************************************************/
 void displayMenu(vector <item>  vec){
-  cout << setw(20) << left <<"Item Name" <<fixed << setprecision(2) << setw(20) << right << "Price" << setw(7) << "Cost" << endl;
+  
+  cout <<"----------------------------------------------------\n";
+  cout << setw(20) << left <<"Item Name" <<fixed << setprecision(2) << setw(25) << right << "Price" << setw(7) << "Cost" << endl;
   cout <<"----------------------------------------------------\n";
   for(int i = 0; i < vec.size(); i++){
     cout << setw(20) << left << vec[i].name;
-    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< vec[i].price << setw(7) << vec[i].cost << endl;
+    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< vec[i].price << setw(7) << "$" <<vec[i].cost << endl << endl;
   }
+  cout << endl;
 }

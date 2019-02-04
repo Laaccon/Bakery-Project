@@ -1,323 +1,57 @@
+// fileread
+// program to read in a set of data into a vector
+
 #include <iostream>
-#include <iomanip>
 #include <fstream>
 #include <vector>
-#include <string>
-#include <ctime>
+#include <string> // sometimes you need this, depends on the compiler
+
 using namespace std;
-
-struct item{
-  string name;
-  float price;
-  float cost;
-};
-
-//Function Prototypes
-void report();
-void changeItems(vector<item> &);
-void salesdata(vector<item> &);
-void addItem(vector<item> &);
-void deleteItem(vector<item> &);
-float calculateCost();
-void writeItems(vector<item> );
-vector<item> readItems();
-void displayMenu(vector<item>);
-item parseItem(ifstream &);
-
-//Price of ingredients per gram as Global variables
-float const FLOURPRC = 0.0005f;
-float const SUGARPRC = 0.001f;
-float const CHOCOPRC = 0.015f;
-float const MEATPRC = 0.01f;
-float const ONIONPRC = 0.005f;
-float const CHEESEPRC = 0.015f;
-
 
 int main() {
 
-  srand(time(NULL));
-  vector<item> bakeryitems;
-  //Check if bakery items file exists
-  fstream itemFile;
-  itemFile.open("items.txt", ios::in);
-  if (itemFile.fail()){
-  //if there is no file create bakeryitems vector with default values
-    bakeryitems = {
-        {"BBQ Pork Bun", 3.5f, 0.94f}, 
-        {"Onion Bread", 2.5f, 0.23f}, 
-        {"Pizza Bun", 3.5f, 0.76f}, 
-        {"Chocolate Bun", 2.5f, 0.35f}, 
-        {"Cookie", 1.5f, 0.26f}};
+  // declare and initialize some variables
+  vector <double> xData; // vector to hold x data points
+  string aLine; // hold a line of the file
+  double temp; // temporary variable
 
-    writeItems(bakeryitems);
-  }
-  else{
-    itemFile.close();
-    bakeryitems = readItems();
-    cout << "File Loaded\n";
-  }
-  //Sales data
-  vector<int> bakerysales{1235, 574, 870, 407, 712};
+  // open the input file as an input file stream (ifstream)
+  ifstream myfile ( "xData.txt" );
 
-  float history[5][12];
-  for(int row = 0; row < 5; row++){
-    for(int col = 0; col < 12; col++){
-      history[row][col] = rand() % 2000 + 120;
-    }
-  }
+  // if the file is open...
+  if (myfile.is_open()) {
+    // and while it's not the end of the file...
+    while (!myfile.eof() ) {
+      // read in a line of the file myfile to variable aLine
+      getline ( myfile, aLine );
 
+      // check that there is something on this line!
 
-  int choice;
-  do{
-    
-    //start user menu
-    cout << "Choose an option from the menu: \n";
-    cout << "-------------------------------\n";
-    cout << "1. Access Sales Data\n";
-    cout << "2. Change Sale Items\n";
-    cout << "3. View history\n";
-    cout << "\tEnter -1 to quit\n";
-    cin >> choice;
-
-    switch(choice){
-      case 1 : salesdata(); break;
-      case 2 : changeItems(bakeryitems); break;
-      case 3 : for(int row = 0; row < 5; row++){
-                for(int col = 0; col < 12; col++){
-                  cout << history[row][col] << setw(5); 
-                }
-                cout << endl;
-              } break;
-      case -1: break;
-      default : cout << "Bad Input. Try Again\n";
-    }
-
-  }while (choice >= 0);
-
-  cout << "Good bye.";
-}
-
-/************************************************
-* Purpose: Menu from which the user can select
-*          adding or deleteing items from menu
-* Input: vector of items
-*************************************************/
-void changeItems(vector<item> &items){
-  int pick;
-  vector<float> temp;
-  cout << "We currently offer: \n";
- // Display Item with price  
-  displayMenu(items);
-  do{
-    cout << "What would you like to do?\n";
-    cout << "1. Add an item\n";
-    cout << "2. Remove an item \n";
-    cout << "3. Show Item list again\n";
-    //cout << "4. Show Cost of each item\n";
-    cout << "Enter -1 to go back\n";
-    cin >> pick;
-
-    switch (pick){
-      case 1 : addItem(items);break;
-      case 2 : deleteItem(items);break;
-      case 3 : displayMenu(items);break;
-                  
-      //case 4 : temp = calculateCost(items); cout << endl; break;
-      default : ;
-    } 
-  }while(pick >= 0);
-}
-
-/************************************************
-* 
-*
-*************************************************/
-void report(){
-  float history[5][12];
-  fstream salesFile;
-  salesFile.open("sales.txt", ios::in);
-  //if it fails create random data for testing
-  if (salesFile.fail()){
-    for(int row = 0; row < 5; row++){
-      for(int col = 0; col < 12; col++){
-        history[row][col] = rand() % 2000 + 120;
+      if(aLine.length() > 0) {
+	// there is something on this line
+	
+	// convert aLine (string) to temp (double)
+	temp = atof( aLine.c_str() );
+	
+	// store the value in the vector
+	xData.push_back(temp);
+      } else {
+	// there is nothing on the line, do nothing
       }
+      
     }
-  } else{
-
-  }
-}
-
-/************************************************
-* 
-*
-*************************************************/
-void salesdata(vector<item> &vec){
-  int choice;
-  cout << "What would you like to do?\n";
-  cout << "1. get the annual report\n";
-  cout << "2. add this month's data\n";
-
-  switch (choice){
-    case 1 : report(); break;
-    case 2 :
-  int month;
-  int sales;
-  cout << "Confirm the month as a number(for example March would be 3: \n"
-  cin >> month;
-  for(item : vec){
-    cout << "how many " << item.name << " were sold.\n";
-    cin >> sales;
-  }
-  break;
-  }
-}
-
-/************************************************
-* Purpose: Add item to vector
-* Input: vector of items
-*************************************************/
-void addItem(vector<item> &vec){
-  string name;
-  float price;
-  float cost;
-   
-  cout << "Enter the name of the item:\n";
-  cin.ignore();
-  getline(cin,name);
-  cout << "Enter the price of the item\n";
-  cin >> price;
-
-  cost = calculateCost();
-  item newItem = {name, price, cost};
-  vec.push_back(newItem);
-  writeItems(vec);
-}
-/************************************************
-* Purpose: Delete item to vector
-* Input: vector of items
-*************************************************/
-void deleteItem(vector<item> &vec){
-  string name;
-  bool isFound = false;
-  int index = 0;
-  cout << "Enter the name of the item you wish to delete: \n";
-  cin.ignore();
-  getline(cin, name);
-  for(int i = 0;i < vec.size(); i++){
-    if(vec[i].name == name){
-      index = i;
-      isFound = true;
-    }
-  }
-  if (isFound)
-    vec.erase(vec.begin() + index); 
-  else
-    cout << "Item Not Found\n";
-  writeItems(vec);
-}
-
-/************************************************
-* 
-*
-*************************************************/
-
-float calculateCost(){
-  int flr,sgr,choc,meat,onion,chs;
-  float total = 0.0;
-  cout << "Enter how much flour is used:\n";
-  cin >> flr;
-  cout << "Enter how much sugar is used:\n";
-  cin >> sgr;
-  cout << "Enter how much chocolate is used:\n";
-  cin >> choc;
-  cout << "Enter how much meat is used:\n";
-  cin >> meat;
-  cout << "Enter how much onion is used:\n";
-  cin >> onion;
-  cout << "Enter how much cheese is used:\n";
-  cin >> chs;
-  
-  total += flr * FLOURPRC;
-  total += sgr * SUGARPRC;
-  total += choc * CHOCOPRC;
-  total += meat * MEATPRC;
-  total += onion * ONIONPRC;
-  total += chs * CHEESEPRC;
-
-  return total;
-}
-
-void writeItems(vector<item> vec){
-  ofstream output_file;
-  output_file.open("items.txt",ios::out);
-    for(int i = 0; i < vec.size(); i++) {
-    output_file << setw(20) << vec[i].name << setw(10) << vec[i].price << setw(10) << vec[i].cost << endl;
-  }
-  output_file.close();
-}
-
-vector<item> readItems(){
-  vector<item> tempItems;
-  item tempItem;
-  ifstream input_file;
-  input_file.open("items.txt", ios::in);
-  cout << "Reading File\n";
-  if(input_file.fail()){
-    cout <<"Failed\n";
+    // now at the file end, close it
+    myfile.close();
+  }  else {
+    // if the file couldn't be opened, write a message and quit
+    cout << "Unable to open file\n";
     exit(1);
   }
-  cout << "Reading\n";
-  //while(!input_file.eof()){
-    
-  //}
 
-  
-  string line;
-  while (input_file >> line){
-    cout << line;
+  // we have the data now, output it as a check
+  for ( int j = 0; j < xData.size(); j++ ) {
+    printf("x = %5.2f\n",xData[j]);
   }
 
-  //while (!input_file.eof() && input_file.is_open()) {
-     //tempItems.push_back(parseItem(input_file));
-   //  cout << "writing\n";
-  //  }
-	input_file.close();
-  return tempItems;
-}
-
-item parseItem(ifstream &source){
-  cout << "Parsing\n";
-  //Item that will be constructed 
-  item fileItem;
-  //Attributes for Item
-  string name;
-  float price;
-  float cost;
-
-	//Scanning a line from the file
-	source >> name >> price >> cost;
-
-	//Assign the data to attributes
-	fileItem.name = name;
-  fileItem.price = price;
-  fileItem.cost = cost;
-
-	return fileItem;
-}
-
-/**********************Display Menu**************************
-* Purpose: To output a formatted list of bakery items offered
-*
-************************************************************/
-void displayMenu(vector <item>  vec){
-  
-  cout <<"----------------------------------------------------\n";
-  cout << setw(20) << left <<"Item Name" <<fixed << setprecision(2) << setw(25) << right << "Price" << setw(7) << "Cost" << endl;
-  cout <<"----------------------------------------------------\n";
-  for(int i = 0; i < vec.size(); i++){
-    cout << setw(20) << left << vec[i].name;
-    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< vec[i].price << setw(7) << "$" <<vec[i].cost << endl << endl;
-  }
-  cout << endl;
+  return 0;
 }

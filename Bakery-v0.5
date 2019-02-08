@@ -1,0 +1,469 @@
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <vector>
+#include <cstring>
+using namespace std;
+
+struct item{
+  string name;
+  float price;
+  float cost;
+};
+
+//Price of ingredients per gram as Global variables
+float const FLOURPRC = 0.0005f;
+float const SUGARPRC = 0.001f;
+float const CHOCOPRC = 0.015f;
+float const MEATPRC = 0.01f;
+float const ONIONPRC = 0.005f;
+float const CHEESEPRC = 0.015f;
+const int HISTCOL = 12;
+
+//Function Prototypes
+void salesData(vector<item> &, float history[][HISTCOL]);
+void report(float [][HISTCOL], int);
+void writeSales(float[][HISTCOL], int);
+void enterSales(vector<item> &, float history[][HISTCOL], int);
+void changeItems(vector<item> &);
+void addItem(vector<item> &);
+void deleteItem(vector<item> &);
+float calculateCost();
+void writeItems(vector<item> );
+vector<item> readItems();
+void displayMenu(vector<item>);
+item parseItem(ifstream &);
+string rplcSpc(string);
+string rplcUdr(string);
+
+int main() {
+
+  vector<item> bakeryitems;
+
+  //Check if bakery items file exists
+  fstream itemFile;
+  itemFile.open("items.txt", ios::in);
+  if (itemFile.fail()){
+    cout << "File not found. Creating deafult.";
+  //if there is no file create bakeryitems vector with default values
+    bakeryitems = {
+        {"BBQ Pork Bun", 3.5f, 0.94f}, 
+        {"Onion Bread", 2.5f, 0.23f}, 
+        {"Pizza Bun", 3.5f, 0.76f}, 
+        {"Chocolate Bun", 2.5f, 0.35f}, 
+        {"Cookie", 1.5f, 0.26f}};
+
+    writeItems(bakeryitems);
+    itemFile.close();
+  }
+  else{
+    itemFile.close();
+    bakeryitems = readItems(); //read items from file
+    cout << "File Loaded\n";
+  }
+
+  //Check if sales data exists 
+
+  float history[bakeryitems.size()][HISTCOL];
+  fstream salesFile;
+  salesFile.open("sales.txt", ios::in);
+  //if it fails create new file with everything set to zero
+  if (salesFile.fail()){
+    cout << "Can't find sales file. \n Constructing new one.\n";
+    for(int row = 0; row < bakeryitems.size(); row++){
+      for(int col = 0; col < HISTCOL; col++){
+        history[row][col] = 0;
+      }
+    }
+    writeSales(history, bakeryitems.size());
+    salesFile.close();
+  } 
+  else{   
+    for(int row = 0; row < bakeryitems.size(); row++){
+      for(int col = 0; col < HISTCOL; col++){
+        salesFile >> history[row][col];
+      }
+    }
+    salesFile.close();
+  }
+
+  int choice;
+  do{
+    
+    //start user menu
+    cout << "Choose an option from the menu: \n";
+    cout << "-------------------------------\n";
+    cout << "1. Access Sales Data\n";
+    cout << "2. Change Sale Items\n";
+    cout << "\tEnter -1 to quit\n";
+    cin >> choice;
+
+    switch(choice){
+      case 1 : salesData(bakeryitems, history); break;
+      case 2 : changeItems(bakeryitems); break;
+      case 3 : for(int row = 0; row < 5; row++){
+                for(int col = 0; col < HISTCOL; col++){
+                  cout << history[row][col] << setw(5); 
+                }
+                cout << endl;
+              } break;
+      case -1: break;
+      default : cout << "Bad Input. Try Again\n";
+    }
+
+  }while (choice >= 0);
+
+  cout << "Good bye.";
+}
+
+/************************************************
+* Purpose: Menu from which the user can select
+*          adding or deleteing items from menu
+* Input: vector of items
+*************************************************/
+void changeItems(vector<item> &items){
+  int pick;
+  vector<float> temp;
+  cout << "We currently offer: \n";
+ // Display Item with price  
+  displayMenu(items);
+  do{
+    cout << "What would you like to do?\n";
+    cout << "1. Add an item\n";
+    cout << "2. Remove an item \n";
+    cout << "3. Show Item list again\n";
+    cout << "Enter -1 to quit \n";
+    cin >> pick;
+
+    switch (pick){
+      case 1 : addItem(items);break;
+      case 2 : deleteItem(items);break;
+      case 3 : displayMenu(items);break;
+      default : ;
+    } 
+  }while(pick >= 0);
+  exit(0);
+}
+
+/************************************************
+* Purpose:  Give annual report
+* Input: Annual data from file
+* Output: Prints data from file
+*************************************************/
+void report(float hist[][HISTCOL], int size, vector<item> &vec){
+  
+
+  cout << "This is how much each item made each month in dollars: \n";
+  cout << defaultfloat << setprecision(5);
+  cout << setw(15) << "Month:"<< setw(7) <<" 1" << setw(7) <<"2"<< setw(7) << "3" << setw(7) << "4" <<setw(7) << "5" << setw(7) << 
+  "7" << setw(7) << "7" << setw(7) << "8" << setw(7) << "9" << setw(7) << "10" << setw(7) << "11" << setw(7) <<"12\n";
+  cout <<"-----------------------------------------------\n";
+  for(int row = 0; row < size; row++){
+    cout << setw(15) << vec[row].name;
+    for(int col = 0; col < HISTCOL; col++){
+      cout << setw(7) << right << hist[row][col];
+    }
+    cout << endl;
+  }
+  cout <<"-----------------------------------------------\n";
+  cout <<"Total Annual Sales Per Item: \n";
+  for(int row = 0; row < size; row ++){
+     cout << setw(15) << vec[row].name;
+     float total = 0;
+     for(int col = 0; col < HISTCOL; col ++){
+       total += hist[row][col];
+     }
+     cout << fixed << setprecision(2) <<": $" << total << endl;
+  }
+}
+
+/************************************************
+* Purpose: Display sales data menu
+*
+*************************************************/
+void salesData(vector<item> &vec, float history[][HISTCOL]){
+  int choice;
+  int size = vec.size();
+  do {
+    cout << "What would you like to do?\n";
+    cout << "1. Get the annual report\n";
+    cout << "2. Add this month's data\n";
+    cout << "\t Enter -1 to go back\n";
+    cin >> choice;
+    switch (choice){
+      case 1 : report(history, size, vec); break;
+      case 2 : enterSales(vec, history, size);break;
+    }
+  } while (choice >=0 );
+}
+
+/************************************************
+* Purpose: Add item to vector
+* Input: vector of items
+*************************************************/
+void addItem(vector<item> &vec){
+  string name;
+  float price;
+  float cost;
+   
+  cout << "Enter the name of the item:\n";
+  cin.ignore();
+  getline(cin,name);
+  cout << "Enter the price of the item\n";
+  cin >> price;
+
+  cost = calculateCost();
+  item newItem = {name, price, cost};
+  vec.push_back(newItem);
+  writeItems(vec);
+
+// load file from sales data to add a new row
+  float history [vec.size()][HISTCOL];
+  fstream salesFile;
+  salesFile.open("sales.txt");
+  for(int row = 0; row < vec.size() - 1; row++){
+    for(int col = 0; col < HISTCOL; col++){
+      salesFile >> history[row][col];
+    }
+  }
+  for(int col = 0; col < HISTCOL; col++){
+    history[vec.size()-1][col] = 0;
+  }
+  salesFile.close();
+  // write temp array with added row
+  writeSales(history, vec.size());
+}
+/************************************************
+* Purpose: Delete item to vector
+* Input: vector of items
+*************************************************/
+void deleteItem(vector<item> &vec){
+  string name;
+  bool isFound = false;
+  int index = 0, size = vec.size();
+  float history[size][HISTCOL]; //sales history
+  float temp[size-1][HISTCOL];  //temp for deleting a row
+  cout << "Enter the name of the item you wish to delete: \n";
+  cin.ignore();
+  getline(cin, name);
+  for(int i = 0;i < vec.size(); i++){
+    if(vec[i].name == name){
+      index = i;
+      isFound = true;
+    }
+  }
+  if (isFound){
+    vec.erase(vec.begin() + index); 
+    writeItems(vec);
+    // load file from sales data to delete it
+    fstream salesFile;
+    salesFile.open("sales.txt");
+    for(int row = 0; row < size; row++){
+      for(int col = 0; col < HISTCOL; col++){
+        salesFile >> history[row][col];
+      }
+    }
+    //copy old data to new one without deleted item
+    for(int row = 0; row < size -1; row++){
+    if (row < index){
+        for(int col = 0; col < HISTCOL; col++){
+          temp[row][col] = history[row][col];
+        }
+      }
+      if (row >= index){
+        for(int col = 0; col < HISTCOL; col++){
+          temp[row][col] = history[row+1][col];
+        }
+      }
+    }
+    // write temp array with deleted row
+    writeSales(temp, size-1);
+    salesFile.close();  
+  }
+  else
+    cout << "Item Not Found\n";
+
+}
+
+/************************************************
+* Purpose: to calculate the cost of ingrients of a particular item
+* Input: User enters how much of each ingriedent
+* Output: returns the total cost of all ingriedents
+*************************************************/
+
+float calculateCost(){
+  int flr,sgr,choc,meat,onion,chs;
+  float total = 0.0;
+  cout << "Enter how much flour is used:\n";
+  cin >> flr;
+  cout << "Enter how much sugar is used:\n";
+  cin >> sgr;
+  cout << "Enter how much chocolate is used:\n";
+  cin >> choc;
+  cout << "Enter how much meat is used:\n";
+  cin >> meat;
+  cout << "Enter how much onion is used:\n";
+  cin >> onion;
+  cout << "Enter how much cheese is used:\n";
+  cin >> chs;
+  
+  total += flr * FLOURPRC;
+  total += sgr * SUGARPRC;
+  total += choc * CHOCOPRC;
+  total += meat * MEATPRC;
+  total += onion * ONIONPRC;
+  total += chs * CHEESEPRC;
+
+  return total;
+}
+
+/************************************************
+* Purpose: Write the Bakery Items List to file
+* Input: vector of items
+* Output: list of items to text file
+*************************************************/
+void writeItems(vector<item> vec){
+  ofstream output_file;
+  // write vector all but the last item
+  output_file.open("items.txt",ios::out);
+    for(int i = 0; i < vec.size()-1; i++) {
+    output_file << setw(20) << rplcSpc(vec[i].name) << setw(10) << vec[i].price << setw(10) << vec[i].cost << endl;
+  }
+  // write the last item without and endl to prevent reading an extra item
+  output_file << setw(20) << rplcSpc(vec[vec.size()-1].name) << setw(10) << vec[vec.size()-1].price << setw(10) << vec[vec.size()-1].cost;
+  output_file.close();
+}
+
+/************************************************
+* Purpose: Read the Bakery Items List from file
+* Input: File
+* Output: vector of bakery items 
+*************************************************/
+vector<item> readItems(){
+  vector<item> tempItems;
+  item tempItem;
+  ifstream input_file;
+  input_file.open("items.txt", ios::in);
+  cout << "Reading File\n";
+  if(input_file.fail()){
+    cout <<"Failed\n";
+    exit(1);
+  }
+
+  string line;
+  while (!input_file.eof() && input_file.is_open()){
+    tempItems.push_back(parseItem(input_file));
+  }
+	input_file.close();
+  return tempItems;
+}
+/************************************************
+* Purpose: parse file stream into items
+* Input: File stream
+* Output: item
+* Note: I found this method of parsing a struct from file on http://www.cplusplus.com/forum/beginner/147287/
+*************************************************/
+item parseItem(ifstream &source){
+  //Item that will be constructed 
+  item fileItem;
+  //Attributes for Item
+  string name;
+  float price;
+  float cost;
+
+	//Scanning a line from the file
+	source >> name >> price >> cost;
+
+	//Assign the data to attributes
+	fileItem.name = rplcUdr(name);
+  fileItem.price = price;
+  fileItem.cost = cost;
+
+	return fileItem;
+}
+
+/************************************************
+* Purpose: writeSales to file
+* Input: sales history array
+* Output: sales data to file
+*************************************************/
+void writeSales(float history[][HISTCOL], int size){
+  ofstream output_file;
+  // write vector all but the last item
+  output_file.open("sales.txt",ios::out);
+    for(int i = 0; i < size -1; i++) {
+      for(int k = 0; k < HISTCOL; k++){
+        output_file << history[i][k] << "\t";
+      }
+      output_file << endl;
+    }
+  // write the last item without and endl to prevent reading an extra item
+  for(int i = 0; i < HISTCOL; i++){
+    output_file << history[size -1][i] << "\t";
+  }
+  output_file.close();
+}
+/************************************************
+* Purpose: Allow the user to input this months sales data
+* Input: the month as an int, sales for each item on menu
+* Output: sales data
+*************************************************/
+void enterSales(vector<item> &vec, float history[][HISTCOL], int size){
+  int month;
+  int sales[size];
+  cout << "Enter the month as a number(for example March would be 3): \n";
+  cin >> month;
+
+  for(int i = 0; i < size; i++){
+    cout << "how many " << vec[i].name << " were sold.\n";
+    cin >> sales[i];
+  }
+
+  // calculate profit from each sale item
+  for(int i = 0; i < size; i++){
+    history[i][month-1] = sales[i] * (vec[i].price - vec[i].cost);
+  }
+  // write data
+  writeSales(history, size);
+}
+/**********************Display Bakery Menu**************************
+* Purpose: To output a formatted list of bakery items offered
+*
+************************************************************/
+void displayMenu(vector <item> vec){
+  
+  cout <<"-------------------------------------------------------\n";
+  cout << setw(20) << left <<"Item Name" <<fixed << setprecision(2) << setw(24) << right << "Price" << setw(11) << "Cost" << endl;
+  cout <<"-------------------------------------------------------\n";
+  for(int i = 0; i < vec.size(); i++){
+    cout << setw(20) << left << vec[i].name;
+    cout << fixed << setprecision(2) << setw(20) << right << "$ "<< vec[i].price << setw(7) << "$" <<vec[i].cost << endl << endl;
+  }
+  cout << endl;
+}
+
+/*****************Replace Space**************************
+* Purpose: replace the white space with an underscore for storing
+* the string in a file to prevent read errors
+*
+************************************************************/
+string rplcSpc(string wSpace){
+  for(int i = 0; i < wSpace.size(); i++){
+    if(wSpace[i] == ' '){
+      wSpace[i] = '_';
+    }
+  }
+  return wSpace;
+}
+/*****************Replace Underscore**************************
+* Purpose: replace the underscore with a space when retieving
+* the item name from file
+************************************************************/
+string rplcUdr(string wUnderSC){
+  for(int i = 0; i < wUnderSC.size(); i++){
+    if(wUnderSC[i] == '_'){
+      wUnderSC[i] = ' ';
+    }
+  }
+  return wUnderSC;
+}
